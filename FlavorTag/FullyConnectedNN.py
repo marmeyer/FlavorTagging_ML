@@ -15,42 +15,37 @@ class Net(nn.Module):
         self.fc2 = nn.Linear(nodes, nodes)
         self.fc3 = nn.Linear(nodes, nodes)
         self.fc4 = nn.Linear(nodes, nodes)
-        self.fc5 = nn.Linear(nodes, nodes)
-        self.fc6 = nn.Linear(nodes, nodes)
-        self.fc7 = nn.Linear(nodes, 3)
+        self.fc5 = nn.Linear(nodes, 3)
 
     def forward(self, x):
         x = F.relu(self.fc1(x))
         x = F.relu(self.fc2(x))
         x = F.relu(self.fc3(x))
         x = F.relu(self.fc4(x))
-        x = F.relu(self.fc5(x))
-        x = F.relu(self.fc6(x))
-        #x = F.sigmoid(self.fc5(x))
-        x=self.fc7(x)
+        x=self.fc5(x)
         return x
 
 
 if __name__=="__main__":
         
     inputdata= {
-        "input_path_b" : '/home/mameyer/FlavorTag_MachineLearning/training_data/output/data_b_test.h5',
-        "input_path_c" : '/home/mameyer/FlavorTag_MachineLearning/training_data/output/data_c_test.h5',
-        "input_path_uds" : '/home/mameyer/FlavorTag_MachineLearning/training_data/output/data_uds_test.h5',
+        "input_path_b" : '/home/mameyer/FlavorTagging_ML/training_data/output/data_b.h5',
+        "input_path_c" : '/home/mameyer/FlavorTagging_ML/training_data/output/data_c.h5',
+        "input_path_uds" : '/home/mameyer/FlavorTagging_ML/training_data/output/data_uds_checked.h5',
     }
     
     # trk1d0sig has to be the first of the listed variables, preselection done (trk1d0sig!=0)
     parameters = {
                 "do_training"  : True,
-                "model_name"   : 'test',  #'OneNet_6layers_150nodes_lr0p0001_equalNumberofevents',
+                "model_name"   : 'OneNet_4layers_150nodes_lr0p0001_equalNumberofevents',
                 "features"     : ["trk1d0sig", "trk2d0sig", "trk1z0sig", "trk2z0sig", "trk1pt_jete", "trk2pt_jete",                                                 "jprobr25sigma", "jprobz25sigma", "d0bprob2", "d0cprob2", "d0qprob2", "z0bprob2", "z0cprob2",                                     "z0qprob2", "nmuon", "nelectron", "trkmass", "jprobr2", "jprobz2", "vtxlen1_jete",                                               "vtxsig1_jete", "vtxdirang1_jete", "vtxmom1_jete", "vtxmass1", "vtxmult1", "vtxmasspc",                                           "vtxprob", "1vtxprob", "vtxlen12all_jete", "vtxmassall", "vtxlen2_jete", "vtxsig2_jete",                                         "vtxdirang2_jete","vtxmom2_jete", "vtxmass2", "vtxmult2", "vtxlen12_jete", "vtxsig12_jete",                                       "vtxdirang12_jete", "vtxmom_jete", "vtxmass", "vtxmult", "nvtx", "nvtxall"],
                 "batch_size"   : 50,
-                "N_epochs"     : 5,
+                "N_epochs"     : 50,
                 "N_nodes"      : 150,
                 "learning_rate" : 0.0001,
                 "balance_input" : True,
                 "apply_sample_weights" : False,
-                "use_test_data" : True
+                "use_test_data" : False
     }
     
     # initialize variables
