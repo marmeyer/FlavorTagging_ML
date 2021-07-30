@@ -6,6 +6,7 @@ import torch.optim as optim
 import numpy as np
 import sklearn.metrics as metrics
 import FullyConnectedNN_train
+from sklearn.decomposition import PCA
 
 class Net(nn.Module):
 
@@ -37,15 +38,17 @@ if __name__=="__main__":
     # trk1d0sig has to be the first of the listed variables, preselection done (trk1d0sig!=0)
     parameters = {
                 "do_training"  : True,
-                "model_name"   : 'OneNet_4layers_150nodes_lr0p0001_equalNumberofevents',
-                "features"     : ["trk1d0sig", "trk2d0sig", "trk1z0sig", "trk2z0sig", "trk1pt_jete", "trk2pt_jete",                                                 "jprobr25sigma", "jprobz25sigma", "d0bprob2", "d0cprob2", "d0qprob2", "z0bprob2", "z0cprob2",                                     "z0qprob2", "nmuon", "nelectron", "trkmass", "jprobr2", "jprobz2", "vtxlen1_jete",                                               "vtxsig1_jete", "vtxdirang1_jete", "vtxmom1_jete", "vtxmass1", "vtxmult1", "vtxmasspc",                                           "vtxprob", "1vtxprob", "vtxlen12all_jete", "vtxmassall", "vtxlen2_jete", "vtxsig2_jete",                                         "vtxdirang2_jete","vtxmom2_jete", "vtxmass2", "vtxmult2", "vtxlen12_jete", "vtxsig12_jete",                                       "vtxdirang12_jete", "vtxmom_jete", "vtxmass", "vtxmult", "nvtx", "nvtxall"],
+                "model_name"   : 'OneNet_4layers_150nodes_lr0p0001_equalNumberofevents_PCA_10_pc_250epochs',
+                "features"     : ["trk1d0sig", "trk2d0sig", "trk1z0sig", "trk2z0sig", "trk1pt_jete", "trk2pt_jete",                                               "jprobr25sigma", "jprobz25sigma", "d0bprob2", "d0cprob2", "d0qprob2", "z0bprob2", "z0cprob2",                                   "z0qprob2", "nmuon", "nelectron", "trkmass", "jprobr2", "jprobz2", "vtxlen1_jete",                                             "vtxsig1_jete", "vtxdirang1_jete", "vtxmom1_jete", "vtxmass1", "vtxmult1", "vtxmasspc",                                         "vtxprob", "1vtxprob", "vtxlen12all_jete", "vtxmassall", "vtxlen2_jete", "vtxsig2_jete",                                       "vtxdirang2_jete","vtxmom2_jete", "vtxmass2", "vtxmult2", "vtxlen12_jete", "vtxsig12_jete",                                     "vtxdirang12_jete", "vtxmom_jete", "vtxmass", "vtxmult", "nvtx", "nvtxall"],
                 "batch_size"   : 50,
-                "N_epochs"     : 50,
+                "N_epochs"     : 250,
                 "N_nodes"      : 150,
                 "learning_rate" : 0.0001,
                 "balance_input" : True,
                 "apply_sample_weights" : False,
-                "use_test_data" : False
+                "use_test_data" : False,
+                "do_pca" : True,
+                "n_pc"   : 10
     }
     
     # initialize variables
@@ -77,6 +80,8 @@ if __name__=="__main__":
     validation_misidudsasb = []
     validation_misidcasb = []
     
+    n_features = len(parameters["features"])
+    
     # read HDF5 input data sets
     print('Number of b jets / c jets / uds jets : ')
     data_b = helperfunctions.HDF5Dataset(inputdata["input_path_b"])
@@ -87,25 +92,33 @@ if __name__=="__main__":
     # convert input data sets into torch tensor
     data_tensor = helperfunctions.ConvertToTensor_NoCat(data,parameters["features"])
     print('Total number of jets: ', len(data_tensor))
-    print('Number of b jets: ', len(data_tensor[data_tensor[:,len(parameters["features"])]==0 ]))
-    print('Number of c jets: ', len(data_tensor[data_tensor[:,len(parameters["features"])]==1 ]))
-    print('Number of uds jets: ', len(data_tensor[data_tensor[:,len(parameters["features"])]==2 ]))
+    print('Number of b jets: ', len(data_tensor[data_tensor[:,n_features]==0 ]))
+    print('Number of c jets: ', len(data_tensor[data_tensor[:,n_features]==1 ]))
+    print('Number of uds jets: ', len(data_tensor[data_tensor[:,n_features]==2 ]))
     
     # select equal number of b, c and light jets randomly
     if parameters["balance_input"]:
         print('Select equal number of b,c and light jets randomly')
-        data_tensor_b = data_tensor[data_tensor[:,len(parameters["features"])]==0 ]
-        data_tensor_c = data_tensor[data_tensor[:,len(parameters["features"])]==1 ]
-        data_tensor_o = data_tensor[data_tensor[:,len(parameters["features"])]==2 ]
+        data_tensor_b = data_tensor[data_tensor[:,n_features]==0 ]
+        data_tensor_c = data_tensor[data_tensor[:,n_features]==1 ]
+        data_tensor_o = data_tensor[data_tensor[:,n_features]==2 ]
         data_tensor_c =data_tensor_c[torch.randint(len(data_tensor_c), (len(data_tensor_b),),     generator=torch.Generator().manual_seed(41))]
         data_tensor_o =data_tensor_o[torch.randint(len(data_tensor_o), (len(data_tensor_b),), generator=torch.Generator().manual_seed(41))]
         data_tensor = torch.cat((data_tensor_b, data_tensor_c, data_tensor_o))
-         
-    net = Net(len(parameters["features"]), parameters["N_nodes"])
-             
-    # normalize data, do not normalize target (at index len(parameters["features"]))
-    data_tensor = helperfunctions.Normalize(data_tensor, len(parameters["features"])) 
+                      
+    # normalize data, do not normalize target (at index n_features)
+    data_tensor = helperfunctions.Normalize(data_tensor, n_features) 
     
+    if parameters["do_pca"]:
+        print('Doing PCA ...')
+        pca = PCA(n_components = n_features)
+        data_tensor[:,0:n_features] = torch.from_numpy(pca.fit_transform(data_tensor[:,0:n_features]))
+        helperfunctions.PlotPCA(data_tensor[:,0:n_features], parameters["model_name"])
+        a = data_tensor[:,n_features]
+        a = torch.reshape(a, (len(data_tensor[:,n_features]), 1))
+        data_tensor = torch.cat( (data_tensor[:,0:parameters["n_pc"]], a) , 1)
+        n_features = parameters["n_pc"]
+        
     # determine number for training, test and validation data, take into account rounding effects
     n_train,n_test,n_val = helperfunctions.Splitting(data_tensor)
         
@@ -113,13 +126,15 @@ if __name__=="__main__":
     train,val,test=torch.utils.data.random_split(data_tensor,[n_train,n_val,n_test],generator=torch.Generator().manual_seed(42))
         
     # weight all classes equally in loss
-    samples_weight = helperfunctions.WeightClasses(train,len(parameters["features"]))
+    samples_weight = helperfunctions.WeightClasses(train,n_features)
     print("Sample weights are : ", samples_weight)
     
     # load training, test and validation data
     trainloader = torch.utils.data.DataLoader(train, batch_size=parameters["batch_size"],shuffle=False)
     testloader  = torch.utils.data.DataLoader(test, batch_size=len(test),shuffle=False)
     validationloader = torch.utils.data.DataLoader(val, batch_size=parameters["batch_size"],shuffle=False)
+    
+    net = Net(n_features, parameters["N_nodes"])
     
     # initialize weights of NN
     net.apply(helperfunctions.weights_init_uniform)
@@ -136,11 +151,11 @@ if __name__=="__main__":
     optimizer = optim.Adam(net.parameters(), parameters["learning_rate"])
         
     # inputs is needed as float, labels as long
-    inputs, labels = helperfunctions.ConvertDataTypes(trainloader, len(parameters["features"]))
+    inputs, labels = helperfunctions.ConvertDataTypes(trainloader, n_features)
     
     # do the training
     if (parameters["do_training"]):
-        FullyConnectedNN_train.train(net, inputs, labels, parameters["N_epochs"], criterion, optimizer, validationloader, len(parameters["features"]), parameters["model_name"])
+        FullyConnectedNN_train.train(net, inputs, labels, parameters["N_epochs"], criterion, optimizer, validationloader, n_features, parameters["model_name"])
     
     # load the model with minimum training loss
     loss=[]
@@ -166,9 +181,9 @@ if __name__=="__main__":
     # determine accuracy in validation data 
     with torch.no_grad():
         for data in loader:     ##rewrite such that function can be used
-            inputs = data[:,0:len(parameters["features"])]
+            inputs = data[:,0:n_features]
             inputs=inputs.float()
-            labels = data[:,len(parameters["features"])]
+            labels = data[:,n_features]
             labels=labels.long()
             outputs=net(inputs)
             
@@ -181,9 +196,9 @@ if __name__=="__main__":
     # determine ROC Curves on validation data
     with torch.no_grad():
         for data in loader:    ##rewrite such that function can be used
-            inputs = data[:,0:len(parameters["features"])]
+            inputs = data[:,0:n_features]
             inputs=inputs.float()
-            labels = data[:,len(parameters["features"])]
+            labels = data[:,n_features]
             labels=labels.long()
             outputs=net(inputs)
             labels_b=np.copy(labels)

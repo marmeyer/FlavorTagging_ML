@@ -318,5 +318,39 @@ def PlotConfusion(matrix,name):
     plt.savefig(name)
     plt.close()
     
+
+def PlotPCA(X, name):
+    cov_mat = np.cov(X.T)
+
+    eig_vals, eig_vecs = np.linalg.eig(cov_mat)
+    eig_vals_cor = np.corrcoef (eig_vals)
+
+    # Make a list of (eigenvalue, eigenvector) tuples
+    eig_pairs = [(np.abs(eig_vals[i]), eig_vecs[:,i]) for i in range(len(eig_vals))]
+
+    # Sort the (eigenvalue, eigenvector) tuples from high to low
+    eig_pairs.sort(key=lambda x: x[0], reverse=True)
+
+    #choosing the PCA for new feature space
+
+    tot = sum(eig_vals)
+
+    # explained variance
+    var_exp = [(i / tot)*100 for i in sorted(eig_vals, reverse=True)]
+    cum_var_exp = np.cumsum(var_exp)
+    
+
+    with plt.style.context('seaborn-whitegrid'):
+        plt.figure(1)
+
+        plt.bar(range(44), var_exp, alpha=0.5, align='center',
+                label='individual explained variance')
+        plt.step(range(44), cum_var_exp, where='mid',
+                 label='cumulative explained variance')
+        plt.ylabel('Explained variance ratio')
+        plt.xlabel('Principal components')
+        plt.legend(loc='best')
+        plt.tight_layout()
+        plt.savefig('plots/'+name+'/PCA.png')    
     
     
