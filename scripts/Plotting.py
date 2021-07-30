@@ -22,8 +22,6 @@ if deepjet:
                 "ChargedDeltaRJetTrackRapidity" : [30, 0.0, 3.0, True, "ChargedJetConstituents"],
                 "ChargedDeltaRTrackSecVertex" : [40, 0.0, 4.0, False, "ChargedJetConstituents"],
                 "ChargedTrackClosestApproachJet" : [100, 0.0, 20000, True, "ChargedJetConstituents"],
-                "IsElectron" : [2, 0.0, 1.0, True, "ChargedJetConstituents"],
-                "IsMuon" : [2, 0.0, 1.0, True, "ChargedJetConstituents"],
                 "ChargedD0Sig" : [100, 0.0, 100, True, "ChargedJetConstituents"],
                 "ChargedD0" : [50, 0.0, 50, True, "ChargedJetConstituents"],
                 "ChargedZ0" : [100, 0.0, 25, True, "ChargedJetConstituents"],
@@ -40,7 +38,6 @@ if deepjet:
                 "NeutralHCalFrac" : [50, 0.0, 1.0, True, "NeutralJetConstituents"],
                 "NeutralTrackMomentumFrac" : [50, 0.0, 1.0, True, "NeutralJetConstituents"],
                 "NeutralTrackEnergyFrac" : [50, 0.0, 1.0, True, "NeutralJetConstituents"],
-                "IsPhoton" : [2, 0.0, 1.0, False, "NeutralJetConstituents"],
                 "JetEnergy" : [100, 0.0, 300, False, "Jets"],
                 "JetPt" : [100, 0.0, 200, False, "Jets"],
                 "JetMomentum" : [100, 0.0, 300, False, "Jets"],
@@ -68,7 +65,6 @@ if deepjet:
                 "SecondaryVertexImpactPar3d" : [100, 0.0, 100, False, "SecondaryVertices"],
                 "SecondaryVertexImpactPar3dSig" : [100, 0.0, 100, False, "SecondaryVertices"],
                }
-    
 else:
     f_b = rt.TFile("../training_data/input/b.root","READ")
     f_c = rt.TFile("../training_data/input/c.root","READ")
@@ -143,15 +139,16 @@ for feature in features:
     max_b = h_b.GetMaximum()
     max_c = h_c.GetMaximum()
     max_uds = h_uds.GetMaximum()
-    
+  
+    maximum=0
     if (max_b > max_c and max_b > max_uds):
-        max = max_b
+        maximum = max_b
     elif (max_c > max_b and max_c > max_uds):
-        max = max_c
+        maximum = max_c
     elif (max_uds > max_b and max_uds > max_c):   
-        max = max_uds
-        
-    h_b.GetYaxis().SetRangeUser(0,max*1.1)
+        maximum = max_uds
+    
+    h_b.GetYaxis().SetRangeUser(0,maximum*1.1)
     
     h_b.SetLineColor(rt.kRed)
     h_c.SetLineColor(rt.kGreen)
@@ -160,9 +157,9 @@ for feature in features:
 
     if (features[feature][3] == True):
         if (feature=="jprobz25sigma" or feature=="vtxdirang12_jete" or feature=="vtxprob" or feature=="vtxsig1_jete"):
-            h_b.GetYaxis().SetRangeUser(0.001,max*1.1)
+            h_b.GetYaxis().SetRangeUser(0.001,maximum*1.1)
         else:
-            h_b.GetYaxis().SetRangeUser(0.0001,max*1.1)
+            h_b.GetYaxis().SetRangeUser(0.0001,maximum*1.1)
         c.SetLogy()
     
     h_b.Draw("hist")
