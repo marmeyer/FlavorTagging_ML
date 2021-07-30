@@ -1,8 +1,4 @@
 .ipynb_checkpoints/
 *~
 __pycache__
-*.png
 *.pth
-*.root
-FlavorTag/plots
-*.h5
